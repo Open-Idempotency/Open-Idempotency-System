@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+//option csharp_namespace = "Grpc.openIdempotency.V1";
+//option go_package = "google.golang.org/grpc/health/grpc_health_v1";
+//option java_multiple_files = true;
+//option java_outer_classname = "HealthProto";
+//option java_package = "io.grpc.health.v1";
+
+package openIdempotency;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+service OpenIdempotency{
+    rpc StreamIdmId(stream IdempotencyMessage) returns (stream IdmExistsResponse);
+    rpc DeleteIdmId(IdempotencyId) returns (google.protobuf.Empty);
+    rpc CheckIdmId(IdempotencyId) returns (IdmExistsResponse);
+    rpc Config(google.protobuf.Empty) returns (ApiConfig);
+}
+
+enum ApiType{
+    API_TYPE_GRPC = 0;
+    API_TYPE_REST = 1;
+    API_TYPE_GRAPHQL = 2;
+}
+
+message ApiConfig{
+    ApiType api = 1;
+}
+
+message IdmExistsResponse{
+    bool exists = 1;
+    google.protobuf.Timestamp ttl = 2;
+}
+
+message IdempotencyId{
+    string uuid = 1;
+}
+
+message IdempotencyMessage {
+    IdempotencyId id = 1;
+    google.protobuf.Timestamp ttl = 2;
+}
+
+// Pulled from https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto
+// custom import is not supported
+// https://github.com/grpc/grpc/blob/master/doc/statuscodes.md
+message  Status {
+    // A simple error code that can be easily handled by the
+    // client. The actual error code is defined by
+    // `google.rpc.Code`.
+    int32 code = 1;
+
+    // A developer-facing human-readable error message in
+    // English. It should both explain the error and offer an
+    // actionable resolution to it.
+    string message = 2;
+
+    // Additional error information that the client code can
+    // use to handle the error, such as retry info or a help
+    // link.
+    repeated google.protobuf.Any details = 3;
+}
+
+
+// Max_connection_age and Max_connection_age_grace with client side keepAliveTime should be active
+// may find wait-for-ready useful
+// steaming is zero to many messages
+// Grpc bidi how do both sides know a commit happened
+// Ensure Flow control send the amount the network or the receiver can handle
+// Because messages are ordered you know what order things happened in, unary cant do this natively
+// servers may need to implement retries and tracing can be muddled
+// resumption key? idempotency? full duplex use half-close
+// be aware full-duplex no rest conversion and could deadlock,but if one side receiving then your mostly good
+
+

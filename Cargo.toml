@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "idempotency_lambda"
-path = "src/idempotency_lambda/src/main.rs"
+#name = "idempotency_lambda"
+#path = "src/idempotency_lambda/src/main.rs"
 #name = "force-build"
 #path = "build.rs"
 

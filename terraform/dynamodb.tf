@@ -4,15 +4,15 @@ resource "aws_dynamodb_table" "IDP" {
   billing_mode = "PAY_PER_REQUEST"
 
   attribute {
-    name = "ms-name"
+    name = "ms_name"
     type = "S"
   }
 
   attribute {
-    name = "ULID"
+    name = "ulid"
     type = "S"
   }
 
-  hash_key = "ms-name"
-  range_key = "ULID"
+  hash_key = "ms_name"
+  range_key = "ulid"
 }

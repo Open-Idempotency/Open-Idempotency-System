@@ -29,6 +29,10 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt, clippy
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Lint (clippy)
         uses: actions-rs/cargo@v1
         with:
@@ -59,6 +63,10 @@ jobs:
         with:
           toolchain: ${{ matrix.rust-version }}
           override: true
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
       - name: Build
         run: cargo build --verbose

@@ -5,7 +5,7 @@ edition = "2021"
 
 [[bin]]
 name = "idempotency_lambda"
-path = "src/idempotent_lambda/main.rs"
+path = "src/idempotency_lambda/src/main.rs"
 #name = "force-build"
 #path = "build.rs"
 

@@ -20,7 +20,6 @@ crossbeam = "0.8.2"
 crossbeam-channel = "0.5.6"
 crossbeam-queue = "0.3.6"
 env_logger = "0.9.0"
-#oerror-stack = "0.1.1"
 lazy_static = "1.4.0"
 log = "0.4.17"
 log4rs = "1.1.1"
@@ -40,6 +39,9 @@ simple_logger = "1.13.0"
 aws_lambda_events = "0.5.0"
 http = "0.2.5"
 chrono = "0.4"
+aws-config = "0.51.0"
+aws-sdk-dynamodb = "0.21.0"
+redis = {version= "0.22.1", features = ["cluster","tokio-comp","connection-manager","ahash"]}
 
 [build-dependencies]
 tonic-build = {version= "0.8.0", features = ["prost"]}

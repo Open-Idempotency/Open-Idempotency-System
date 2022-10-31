@@ -34,6 +34,7 @@ protobuf = "3.2.0"
 prost-types = "0.11.1"
 aws-config = "0.51.0"
 aws-sdk-dynamodb = "0.21.0"
+redis = {version= "0.22.1", features = ["cluster","tokio-comp","connection-manager","ahash"]}
 
 [build-dependencies]
 tonic-build = {version= "0.8.0", features = ["prost"]}

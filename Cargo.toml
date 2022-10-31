@@ -6,8 +6,8 @@ edition = "2021"
 [[bin]]
 #name = "idempotency_lambda"
 #path = "src/idempotency_lambda/src/main.rs"
-#name = "force-build"
-#path = "build.rs"
+name = "force-build"
+path = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]

@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 use std::fmt::Debug;
 use std::pin::Pin;
 use log::{info, LevelFilter};
@@ -16,6 +19,9 @@ use open_idempotency::{
 };
 use prost_types::Timestamp as grpcTimestamp;
 
+lazy_static! {
+    static ref DATABASE: IDatabase
+}
 
 pub mod open_idempotency {
     tonic::include_proto!("open_idempotency");

@@ -1,6 +1,7 @@
 struct DbConfig {
     project_name: str,
-    table_name: str,
+    table_name: Option<str>,
+    url: Option<str>,
 }
 
 trait IDatabase {

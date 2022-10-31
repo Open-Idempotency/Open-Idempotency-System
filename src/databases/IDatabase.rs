@@ -2,6 +2,7 @@ struct DbConfig {
     project_name: str,
     table_name: Option<str>,
     url: Option<str>,
+    keyspace: Option<str>,
 }
 
 trait IDatabase {

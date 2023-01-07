@@ -1,23 +1,23 @@
 use cassandra_cpp::Cluster;
+use std::time::Duration;
 
-struct CassandraClient {
+pub struct CassandraClient {
     client: cassandra_cpp::Session,
-    project_name: str,
     table_name: str,
 }
 
 impl IDatabase for CassandraClient {
-    async fn exists(&self, key: uuid) -> bool{
+    async fn exists(&self, key: uuid, app_id: String) -> bool{
 
         return true
     }
-    async fn delete (&self, key: uuid){
+    async fn delete (&self, key: uuid, app_id: String){
 
     }
-    async fn put (&self, key: uuid, ttl: prost_types::Timestamp){
+    async fn put (&self, key: uuid, app_id: String, ttl: Duration){
 
     }
-    async fn init (&self, config: DbConfig) -> dyn IDatabase{
+    async fn init (&mut self, config: DbConfig) -> dyn IDatabase{
         let mut cluster = Cluster::default();
         cluster.set_contact_points(config.url).unwrap();
         self.client = cluster.connect_keyspace(config.keyspace).unwrap();

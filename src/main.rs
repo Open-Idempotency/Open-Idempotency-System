@@ -17,7 +17,12 @@ use open_idempotency::{
     open_idempotency_server::{OpenIdempotency, OpenIdempotencyServer } ,
     ApiConfig, IdmExistsResponse, IdempotencyId, IdempotencyMessage , Status as GRPCStatus
 };
+mod databases;
+use databases::create_database;
+
 use prost_types::Timestamp as grpcTimestamp;
+
+
 
 lazy_static! {
     static ref DATABASE: IDatabase

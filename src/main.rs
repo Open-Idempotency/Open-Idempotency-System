@@ -17,16 +17,11 @@ use open_idempotency::{
     open_idempotency_server::{OpenIdempotency, OpenIdempotencyServer } ,
     ApiConfig, IdmExistsResponse, IdempotencyId, IdempotencyMessage , Status as GRPCStatus
 };
-mod databases;
-use databases::create_database;
-
 use prost_types::Timestamp as grpcTimestamp;
 
-
-
-lazy_static! {
-    static ref DATABASE: IDatabase
-}
+// lazy_static! {
+//     static ref DATABASE: IDatabase
+// }
 
 pub mod open_idempotency {
     tonic::include_proto!("open_idempotency");
@@ -44,7 +39,7 @@ impl OpenIdempotency for OpenIdempotencyService {
     type StreamIdmIdStream =
     Pin<Box<dyn Stream<Item = Result<IdmExistsResponse, Status>> + 'static + Send + Sync >>;
 
-    async fn stream_idm_id(
+    async fn stream(
         &self,
         request: Request<Streaming<IdempotencyMessage>>,
     ) -> Result<Response<Self::StreamIdmIdStream>, Status>{
@@ -72,14 +67,21 @@ impl OpenIdempotency for OpenIdempotencyService {
         )))
 
     }
-    async fn delete_idm_id(
+    async fn delete(
         &self,
         _request: Request<IdempotencyId>,
     ) -> Result<Response<()>, Status>{
         Ok(Response::new(()))
     }
 
-    async fn check_idm_id(
+    async fn save(
+        &self,
+        _request: Request<IdempotencyId>,
+    ) -> Result<Response<()>, Status>{
+        Ok(Response::new(()))
+    }
+
+    async fn check(
         &self,
         request: Request<IdempotencyId>,
     ) -> Result<Response<IdmExistsResponse>, Status>{

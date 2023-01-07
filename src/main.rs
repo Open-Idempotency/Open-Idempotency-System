@@ -21,6 +21,7 @@ mod databases;
 use databases::create_database;
 
 use prost_types::Timestamp as grpcTimestamp;
+use prost_types::Duration as grpcDuration;
 
 
 
@@ -59,7 +60,7 @@ impl OpenIdempotency for OpenIdempotencyService {
                 // Do some processing
                 let temp = IdmExistsResponse{
                     exists: true,
-                    ttl: Some(grpcTimestamp { seconds: 5, nanos: 0 }),
+                    ttl: Some(grpcDuration { seconds: 5, nanos: 0 }),
                 };
                 tx.send(Ok(temp)).await.unwrap();
             }
@@ -86,7 +87,7 @@ impl OpenIdempotency for OpenIdempotencyService {
         Ok(Response::new(
             IdmExistsResponse{
                 exists: true,
-                ttl: Some(grpcTimestamp { seconds: 5, nanos: 0 }),
+                ttl: Some(grpcDuration { seconds: 5, nanos: 0 }),
             }
         ))
     }

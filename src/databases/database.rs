@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use async_trait::async_trait;
 
+#[derive(Clone)]
 pub struct DbConfig {
     pub url: String,
     pub table_name: Option<String>,

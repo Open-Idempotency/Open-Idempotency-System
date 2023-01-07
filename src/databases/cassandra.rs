@@ -1,33 +1,36 @@
 use std::sync::Arc;
-use cassandra_cpp::Cluster;
+// use cassandra_cpp::Cluster;
 use std::time::Duration;
+use async_trait::async_trait;
 use crate::databases::database::{DbConfig, IDatabase};
 
 pub struct CassandraClient {
-    client: cassandra_cpp::Session,
+    // client: Option<cassandra_cpp::Session>,
     table_name: String,
 }
 
+#[async_trait]
 impl IDatabase for CassandraClient {
-    fn exists(&self, key: String, app_id: String) -> bool{
+    async fn exists(&self, key: String, app_id: String) -> bool{
 
         return true
     }
-    fn delete (&self, key: String, app_id: String){
+    async fn delete (&self, key: String, app_id: String){
 
     }
-    fn put (&self, key: String, app_id: String, ttl: Duration){
+    async fn put (&self, key: String, app_id: String, ttl: Option<Duration>){
 
     }
 
 }
 
 impl CassandraClient {
-    fn new (config: DbConfig) -> Arc<dyn IDatabase> {
-        let mut cluster = Cluster::default();
-        cluster.set_contact_points(config.url).unwrap();
+    pub fn new (config: DbConfig) -> Arc<dyn IDatabase> {
+        // let mut cluster = Cluster::default();
+        // cluster.set_contact_points(config.url).unwrap();
+        // was: cluster.connect_keyspace(config.keyspace).unwrap()
         let c = CassandraClient {
-            client: cluster.connect_keyspace(config.keyspace).unwrap(),
+            // client: None,
             table_name: config.table_name.unwrap()
         };
         return Arc::new(c);

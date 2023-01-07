@@ -10,7 +10,7 @@ package openIdempotency;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/any.proto";
-import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 
 service OpenIdempotency{
     rpc StreamIdmId(stream IdempotencyMessage) returns (stream IdmExistsResponse);
@@ -31,7 +31,7 @@ message ApiConfig{
 
 message IdmExistsResponse{
     bool exists = 1;
-    google.protobuf.Timestamp ttl = 2;
+    google.protobuf.Duration ttl = 2;
 }
 
 message IdempotencyId{
@@ -40,7 +40,8 @@ message IdempotencyId{
 
 message IdempotencyMessage {
     IdempotencyId id = 1;
-    google.protobuf.Timestamp ttl = 3;
+    string appId = 2;
+    google.protobuf.Duration ttl = 3;
 }
 
 // Pulled from https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto

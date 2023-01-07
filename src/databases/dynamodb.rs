@@ -1,12 +1,15 @@
-struct DynamodbClient {
+use std::time::Duration;
+use aws_sdk_dynamodb::Client;
+use aws_sdk_dynamodb::model::AttributeValue;
+
+pub struct DynamodbClient {
     client: aws_sdk_dynamodb::client,
-    project_name: str,
     table_name: str,
 }
 
 impl IDatabase for DynamodbClient {
 
-    async fn exists(&self, key: uuid) -> bool {
+    async fn exists(&self, key: uuid, app_id: String) -> bool {
         let request = client
             .get_item()
             .table_name(tablename)
@@ -19,7 +22,7 @@ impl IDatabase for DynamodbClient {
         return true
     }
 
-    async fn delete (&self, key: uuid){
+    async fn delete (&self, key: uuid, app_id: String){
         let request = client
             .delete_item()
             .table_name(tablename)
@@ -31,7 +34,7 @@ impl IDatabase for DynamodbClient {
             ).send().await?;
     }
 
-    async fn put (&self, key: uuid, ttl: prost_types::Timestamp){
+    async fn put (&self, key: uuid, app_id: String, ttl: Duration){
         let request = client
             .put_item()
             .table_name(tablename)
@@ -46,10 +49,9 @@ impl IDatabase for DynamodbClient {
             ).send().await?;
     }
 
-    async fn init (&self, config: DbConfig) -> dyn IDatabase{
+    async fn init (&mut self, config: DbConfig) -> dyn IDatabase{
         let shared_config = aws_config::load_from_env().await;
         self.client = Client::new(&shared_config);
-        self.project_name = config.project_name;
         self.table_name = config.table_name;
         return self;
     }

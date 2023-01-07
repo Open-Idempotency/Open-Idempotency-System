@@ -1,15 +1,17 @@
+use std::sync::Arc;
 use std::time::Duration;
 use aws_sdk_dynamodb::Client;
 use aws_sdk_dynamodb::model::AttributeValue;
+use crate::databases::database::{DbConfig, IDatabase};
 
 pub struct DynamodbClient {
     client: aws_sdk_dynamodb::client,
-    table_name: str,
+    table_name: String,
 }
 
 impl IDatabase for DynamodbClient {
 
-    async fn exists(&self, key: uuid, app_id: String) -> bool {
+    async fn exists(&self, key: String, app_id: String) -> bool {
         let request = client
             .get_item()
             .table_name(tablename)
@@ -22,7 +24,7 @@ impl IDatabase for DynamodbClient {
         return true
     }
 
-    async fn delete (&self, key: uuid, app_id: String){
+    async fn delete (&self, key: String, app_id: String){
         let request = client
             .delete_item()
             .table_name(tablename)
@@ -34,7 +36,7 @@ impl IDatabase for DynamodbClient {
             ).send().await?;
     }
 
-    async fn put (&self, key: uuid, app_id: String, ttl: Duration){
+    async fn put (&self, key: String, app_id: String, ttl: Duration){
         let request = client
             .put_item()
             .table_name(tablename)
@@ -49,11 +51,16 @@ impl IDatabase for DynamodbClient {
             ).send().await?;
     }
 
-    async fn init (&mut self, config: DbConfig) -> dyn IDatabase{
-        let shared_config = aws_config::load_from_env().await;
-        self.client = Client::new(&shared_config);
-        self.table_name = config.table_name;
-        return self;
-    }
 
+
+}
+
+impl DynamodbClient {
+    async fn new (config: DbConfig) -> Arc<dyn IDatabase> {
+        let shared_config = aws_config::load_from_env().await;
+        return Arc::new(DynamodbClient {
+            client: Client::new(&shared_config),
+            table_name: config.table_name.unwrap()
+        });
+    }
 }

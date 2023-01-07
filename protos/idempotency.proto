@@ -13,34 +13,41 @@ import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 
 service OpenIdempotency{
-    rpc StreamIdmId(stream IdempotencyMessage) returns (stream IdmExistsResponse);
-    rpc DeleteIdmId(IdempotencyId) returns (google.protobuf.Empty);
-    rpc CheckIdmId(IdempotencyId) returns (IdmExistsResponse);
+    rpc Stream(stream IdempotencyMessage) returns (stream IdempotencyMessage);
+    rpc Delete(IdempotencyMessage) returns (google.protobuf.Empty);
+    rpc Check(IdempotencyMessage) returns (IdempotencyMessage);
+    rpc Save(IdempotencyDataMessage) returns(google.protobuf.Empty);
     rpc Config(google.protobuf.Empty) returns (ApiConfig);
 }
 
 enum ApiType{
     API_TYPE_GRPC = 0;
     API_TYPE_REST = 1;
-    API_TYPE_GRAPHQL = 2;
 }
 
 message ApiConfig{
     ApiType api = 1;
 }
 
-message IdmExistsResponse{
-    bool exists = 1;
-    google.protobuf.Timestamp ttl = 2;
+enum messageStatus {
+    None = 0;
+    In_Progress = 1;
+    Completed = 2;
 }
 
-message IdempotencyId{
-    string uuid = 1;
+message IdempotencyResponse{
+    messageStatus status = 1;
+    google.protobuf.Timestamp expire = 2;
 }
 
 message IdempotencyMessage {
-    IdempotencyId id = 1;
-    google.protobuf.Timestamp ttl = 3;
+    string id = 1;
+    int64 customTTL = 2;
+}
+
+message IdempotencyDataMessage{
+    string id = 1;
+    string data = 2;
 }
 
 // Pulled from https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto

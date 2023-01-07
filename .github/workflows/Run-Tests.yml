@@ -1,0 +1,96 @@
+name: Rust-CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          - beta
+          - nightly
+        rust-version: [ stable ]
+        features: [ --failure-output immediate-final ]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Lint (clippy)
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-features --all-targets -- #-D warnings # causes build to fail when encountering warnings
+      - name: Lint (rustfmt)
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
+
+
+  Test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          - beta
+          - nightly
+        rust-version: [stable]
+        features: [ --all-features --fail-under 80 ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1 # allows us to provide the components we want to use
+        with:
+          toolchain: ${{ matrix.rust-version }}
+          override: true
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - name: Build
+        run: cargo build --verbose
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: '0.15.0'
+          args: ${{ matrix.features }}
+      - name: Run cargo-audit
+        uses: actions-rs/audit-check@v1
+        with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+
+
+#    TODO implement me 
+#    Profiling:
+#      name: Profiling
+#      runs-on: ubuntu-latest
+#      strategy:
+#        matrix:
+#          toolchain:
+#            - stable
+#            - beta
+#            - nightly
+#          rust-version: [stable ]
+
+

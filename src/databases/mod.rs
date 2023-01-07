@@ -1,11 +1,10 @@
-mod redis;
+mod redis_driver;
 // mod dynamodb;
 // mod cassandra;
 pub mod database;
-
 use std::sync::Arc;
 use database::IDatabase;
-use redis::RedisClient;
+use redis_driver::RedisClient;
 use crate::databases::database::DbConfig;
 
 pub fn create_database() -> Arc<dyn IDatabase> {

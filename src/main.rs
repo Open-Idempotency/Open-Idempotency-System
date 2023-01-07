@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate lazy_static;
-
+use std::sync::{Arc, Mutex};
 use std::fmt::Debug;
 use std::pin::Pin;
 use log::{info, LevelFilter};
@@ -24,10 +24,12 @@ use prost_types::Timestamp as grpcTimestamp;
 use prost_types::Duration as grpcDuration;
 
 
-
-lazy_static! {
-    static ref DATABASE: IDatabase = databases::create_database()
+fn do_stuff() {
+    let c = databases::create_database();
 }
+// lazy_static! {
+//     static ref DATABASE: Mutex<Arc<dyn IDatabase + 'static>> = Mutex::new(databases::create_database());
+// }
 
 pub mod open_idempotency {
     tonic::include_proto!("open_idempotency");

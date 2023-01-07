@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate lazy_static;
-
+use std::sync::{Arc, Mutex};
 use std::fmt::Debug;
 use std::pin::Pin;
 use log::{info, LevelFilter};
@@ -17,10 +17,18 @@ use open_idempotency::{
     open_idempotency_server::{OpenIdempotency, OpenIdempotencyServer } ,
     ApiConfig, IdmExistsResponse, IdempotencyId, IdempotencyMessage , Status as GRPCStatus
 };
-use prost_types::Timestamp as grpcTimestamp;
+mod databases;
 
+use databases::database::IDatabase;
+use prost_types::Timestamp as grpcTimestamp;
+use prost_types::Duration as grpcDuration;
+
+
+fn do_stuff() {
+    let c = databases::create_database();
+}
 // lazy_static! {
-//     static ref DATABASE: IDatabase
+//     static ref DATABASE: Mutex<Arc<dyn IDatabase + 'static>> = Mutex::new(databases::create_database());
 // }
 
 pub mod open_idempotency {
@@ -39,7 +47,7 @@ impl OpenIdempotency for OpenIdempotencyService {
     type StreamIdmIdStream =
     Pin<Box<dyn Stream<Item = Result<IdmExistsResponse, Status>> + 'static + Send + Sync >>;
 
-    async fn stream(
+    async fn stream_idm_id(
         &self,
         request: Request<Streaming<IdempotencyMessage>>,
     ) -> Result<Response<Self::StreamIdmIdStream>, Status>{
@@ -54,7 +62,7 @@ impl OpenIdempotency for OpenIdempotencyService {
                 // Do some processing
                 let temp = IdmExistsResponse{
                     exists: true,
-                    ttl: Some(grpcTimestamp { seconds: 5, nanos: 0 }),
+                    ttl: Some(grpcDuration { seconds: 5, nanos: 0 }),
                 };
                 tx.send(Ok(temp)).await.unwrap();
             }
@@ -88,7 +96,7 @@ impl OpenIdempotency for OpenIdempotencyService {
         Ok(Response::new(
             IdmExistsResponse{
                 exists: true,
-                ttl: Some(grpcTimestamp { seconds: 5, nanos: 0 }),
+                ttl: Some(grpcDuration { seconds: 5, nanos: 0 }),
             }
         ))
     }

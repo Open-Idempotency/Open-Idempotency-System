@@ -19,9 +19,9 @@ use open_idempotency::{
 };
 use prost_types::Timestamp as grpcTimestamp;
 
-lazy_static! {
-    static ref DATABASE: IDatabase
-}
+// lazy_static! {
+//     static ref DATABASE: IDatabase
+// }
 
 pub mod open_idempotency {
     tonic::include_proto!("open_idempotency");

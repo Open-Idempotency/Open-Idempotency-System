@@ -15,7 +15,9 @@ use tonic_reflection::server::Builder;
 use tokio::sync::mpsc;
 use open_idempotency::{
     open_idempotency_server::{OpenIdempotency, OpenIdempotencyServer } ,
-    ApiConfig, IdempotencyResponse, IdempotencyDataMessage, IdempotencyStatus, IdempotencyMessage , Status as GRPCStatus
+    ApiConfig, IdempotencyResponse, IdpempotencyId,
+    IdempotencyDataMessage, IdempotencyStatus,
+    IdempotencyMessage , Status as GRPCStatus
 };
 use prost_types::Timestamp as grpcTimestamp;
 
@@ -64,9 +66,8 @@ impl OpenIdempotency for OpenIdempotencyService {
                 let v_request: IdempotencyDataMessage = vote.unwrap();
 
                 // Do some processing
-                let temp = IdmExistsResponse{
-                    exists: true,
-                    ttl: Some(grpcTimestamp { seconds: 5, nanos: 0 }),
+                let temp = IdempotencyStatus{
+                    success: false,
                 };
                 tx.send(Ok(temp)).await.unwrap();
             }
@@ -97,9 +98,8 @@ impl OpenIdempotency for OpenIdempotencyService {
                 let v_request: IdempotencyMessage = vote.unwrap();
 
                 // Do some processing
-                let temp = IdmExistsResponse{
-                    exists: true,
-                    ttl: Some(grpcTimestamp { seconds: 5, nanos: 0 }),
+                let temp = IdempotencyStatus{
+                    success: false,
                 };
                 tx.send(Ok(temp)).await.unwrap();
             }

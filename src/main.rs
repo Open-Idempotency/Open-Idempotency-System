@@ -75,14 +75,21 @@ impl OpenIdempotency for OpenIdempotencyService {
         )))
 
     }
-    async fn delete_idm_id(
+    async fn delete(
         &self,
         _request: Request<IdempotencyId>,
     ) -> Result<Response<()>, Status>{
         Ok(Response::new(()))
     }
 
-    async fn check_idm_id(
+    async fn save(
+        &self,
+        _request: Request<IdempotencyId>,
+    ) -> Result<Response<()>, Status>{
+        Ok(Response::new(()))
+    }
+
+    async fn check(
         &self,
         request: Request<IdempotencyId>,
     ) -> Result<Response<IdmExistsResponse>, Status>{

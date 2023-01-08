@@ -16,7 +16,7 @@ service OpenIdempotency{
     rpc StreamCheck(stream IdempotencyMessage) returns (stream IdempotencyStatus);
     rpc StreamSave(stream IdempotencyDataMessage) returns(stream IdempotencyStatus );
     rpc Delete(IdempotencyMessage) returns (google.protobuf.Empty);
-    rpc Check(IdempotencyMessage) returns (IdempotencyResponse);
+    rpc Check(IdempotencyMessage) returns (IdempotencyStatus);
     rpc Save(IdempotencyDataMessage) returns(google.protobuf.Empty);
     rpc GetData(IdempotencyId) returns (IdempotencyDataMessage);
     rpc Config(google.protobuf.Empty) returns (ApiConfig);
@@ -48,7 +48,8 @@ message IdempotencyId {
 
 message IdempotencyMessage {
     IdempotencyId id = 1;
-    int64 customTTL = 2;
+    string app_id = 2;
+    int64 customTTL = 3;
 }
 
 message IdempotencyDataMessage{
@@ -57,8 +58,8 @@ message IdempotencyDataMessage{
 }
 
 message IdempotencyStatus{
-    bool success = 1;
-    string id = 2;
+    messageStatus status = 1;
+    IdempotencyDataMessage message = 2;
 }
 
 // Pulled from https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto

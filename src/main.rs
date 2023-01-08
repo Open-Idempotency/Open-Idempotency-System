@@ -1,8 +1,10 @@
 #[macro_use]
 extern crate lazy_static;
-
+use tokio::sync::Mutex;
+use std::sync::{Arc};
 use std::fmt::Debug;
 use std::pin::Pin;
+use std::time::Duration;
 use log::{info, LevelFilter};
 use log4rs::append::console::ConsoleAppender;
 use log4rs::config::{Appender, Root};
@@ -21,17 +23,19 @@ use open_idempotency::{
     IdempotencyMessage , Status as GRPCStatus
 };
 mod databases;
+mod proto_bridge;
 
 use databases::database::IDatabase;
 use prost_types::Timestamp as grpcTimestamp;
 use prost_types::Duration as grpcDuration;
+use crate::databases::database::{IdempotencyTransaction, MessageStatusDef};
+use crate::open_idempotency::MessageStatus;
 
-fn do_stuff() {
-    let c = databases::create_database();
-}
+
 // lazy_static! {
-//     static ref DATABASE: IDatabase
+//     static ref DATABASE: Arc<Mutex<Box<dyn IDatabase + Send>>> = databases::create_database_mutex_sync();
 // }
+// let db = DATABASE.lock().await;
 
 pub mod open_idempotency {
     tonic::include_proto!("open_idempotency");
@@ -41,7 +45,9 @@ pub mod open_idempotency {
 }
 
 #[derive(Debug, Default)]
-pub struct OpenIdempotencyService {}
+pub struct OpenIdempotencyService {
+
+}
 
 #[tonic::async_trait]
 impl OpenIdempotency for OpenIdempotencyService {
@@ -60,18 +66,31 @@ impl OpenIdempotency for OpenIdempotencyService {
         tokio::spawn(async move {
             while let Some(vote) = stream.next().await {
                 let v_request: IdempotencyMessage = vote.unwrap();
+                let id = v_request.id.unwrap().clone().uuid.clone();
+                let app_id = v_request.app_id.clone();
 
+                let mut db = databases::create_database().await;
+                let check_result = db.exists(
+                    id.clone(),
+                    app_id.clone()
+                ).await.expect("failed to check if id exists");
+                if check_result.status == MessageStatusDef::None {
+                    db.put(id.clone(),
+                           app_id.clone(),
+                           IdempotencyTransaction::new_default_in_progress(),
+                           Some(Duration::from_secs(60 * 60))).await.expect("Failed to put key");
+                }
                 // Do some processing
-                let temp = IdempotencyStatus{
-                    success: false,
-                    id: "".to_string(),
-                };
-                tx.send(Ok(temp)).await.unwrap();
+                let temp = proto_bridge::convert_to_idempotency_status(
+                    id.clone(),
+                    check_result);
+                tx.send(Ok(temp)).await.expect("failed to send response");
+                // let status1 = Status::new(tonic::Code::Internal, "Failed to to handle request");
+                // tx.send(Err(status1)).await.unwrap();
             }
-
-            info!("{}", "Client <data here> failed sending data from server");
         });
 
+        info!("{}", "Client <data here> failed sending data from server");
         Ok(Response::new(Box::pin(
             tokio_stream::wrappers::ReceiverStream::new(rx),
         )))
@@ -94,11 +113,12 @@ impl OpenIdempotency for OpenIdempotencyService {
                 let v_request: IdempotencyDataMessage = vote.unwrap();
 
                 // Do some processing
-                let temp = IdempotencyStatus{
-                    success: false,
-                    id: "".to_string(),
-                };
-                tx.send(Ok(temp)).await.unwrap();
+                // let temp = IdempotencyStatus{
+                //     status: MessageStatus::Completed
+                //     id: "".to_string(),
+                // };
+                let status1 = Status::new(tonic::Code::Internal, "Failed to to handle request");
+                tx.send(Err(status1)).await.unwrap();
             }
 
             info!("{}", "Client <data here> failed sending data from server");
@@ -120,25 +140,53 @@ impl OpenIdempotency for OpenIdempotencyService {
         &self,
         _request: Request<IdempotencyDataMessage>,
     ) -> Result<Response<()>, Status>{
+        let req: IdempotencyDataMessage = _request.into_inner();
+        let id = req.id.clone();
+        // let app_id = req.app_id.clone();
+        // let mut db = databases::create_database().await;
         Ok(Response::new(()))
     }
 
     async fn check(
         &self,
         request: Request<IdempotencyMessage>,
-    ) -> Result<Response<IdempotencyResponse>, Status>{
+    ) -> Result<Response<IdempotencyStatus>, Status>{
+        let req: IdempotencyMessage = request.into_inner();
+        let id = req.id.unwrap().uuid.clone();
+        let app_id = req.app_id.clone();
+        let mut db = databases::create_database().await;
+        //
+        let check_result = db.exists(
+            id.clone(),
+            app_id.clone()
+        ).await.expect("failed to check result");
+        // Do some processing
+        let temp = proto_bridge::convert_to_idempotency_status(
+            id.clone(),
+            check_result);
         Ok(Response::new(
-            IdempotencyResponse{
-                status: 0,
-                expire: None,
-            }
+            temp
         ))
+        // let status1 = Status::new(tonic::Code::Internal, "Failed to to handle request");
+        // tx.send(Err(status1)).await.unwrap();
+
+        // let temp = proto_bridge::convert_to_idempotency_status(
+        //     id.clone(),
+        //     IdempotencyTransaction::new_default_none());
+        // Ok(Response::new(
+        //     temp
+        // ))
     }
 
     async fn get_data(
         &self,
         request: Request<IdempotencyId>,
     ) -> Result<Response<IdempotencyDataMessage>, Status>{
+
+        // let req: IdempotencyId = request.into_inner();
+        // let id = req.id.clone();
+        // let app_id = req.app_id.clone();
+
         Ok(Response::new(  IdempotencyDataMessage{
             id: "".to_string(),
             data: "".to_string(),

@@ -1,9 +1,8 @@
 extern crate redis;
 use async_trait::async_trait;
-use std::sync::Arc;
 use std::time::Duration;
-use redis::{Client, AsyncCommands, RedisResult};
-use crate::databases::database::{IDatabase, DbConfig, combine_key, MessageStatusDef, IdempotencyTransaction};
+use redis::{Client, AsyncCommands};
+use crate::databases::database::{IDatabase, DbConfig, combine_key, IdempotencyTransaction};
 use std::convert::TryFrom;
 use std::error::Error;
 
@@ -13,27 +12,31 @@ pub struct RedisClient{
     config: DbConfig
 }
 
+unsafe impl Send for RedisClient {
+
+}
+
 #[async_trait]
 impl IDatabase for RedisClient {
 
-    async fn exists(&mut self, key: String, app_id: String) -> Result<IdempotencyTransaction, Box<dyn Error>> {
+    async fn exists(&mut self, key: String, app_id: String) -> Result<IdempotencyTransaction, Box<dyn Error + Send + Sync>> {
         let full_key = combine_key(key, app_id);
         let exists: bool = self.con.exists(&full_key, ).await?;
         if !exists {
             return Ok(IdempotencyTransaction::new_default_none());
         }
         // todo: get actual status
-        let valString : String = self.con.get(&full_key).await?;
-        let deserialized: IdempotencyTransaction = serde_json::from_str(&valString).unwrap();
+        let val_string : String = self.con.get(&full_key).await?;
+        let deserialized: IdempotencyTransaction = serde_json::from_str(&val_string).unwrap();
         return Ok(deserialized);
     }
 
-    async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error>> {
+    async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.con.del(combine_key(key, app_id)).await?;
         Ok(())
     }
 
-    async fn put (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error>>{
+    async fn put (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error + Send + Sync>>{
         let ttl_usize = usize::try_from(ttl.unwrap().as_secs()).unwrap();
         let _ : () = self.con.set_ex(
             combine_key(key, app_id),
@@ -42,11 +45,10 @@ impl IDatabase for RedisClient {
         ).await?;
         Ok(())
     }
-
 }
 
 impl RedisClient {
-    pub async fn new (config: DbConfig) -> Box<dyn IDatabase> {
+    pub async fn new (config: DbConfig) -> Box<dyn IDatabase + Send> {
         let client = Client::open(config.url.clone()).unwrap();
         let con =  client.get_async_connection().await.unwrap();
         let r = RedisClient {
@@ -61,7 +63,7 @@ impl RedisClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::databases::database::DatabaseOption;
+    use crate::databases::database::{DatabaseOption, MessageStatusDef};
     use super::*;
 
     async fn init_client() -> Box<dyn IDatabase> {

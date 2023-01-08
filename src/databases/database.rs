@@ -12,9 +12,16 @@ pub struct DbConfig {
 
 #[async_trait]
 pub trait IDatabase {
-    async fn exists(&self, key: String, app_id: String) -> bool;
-    async fn delete (&self, key: String, app_id: String);
-    async fn put (&self, key: String, app_id: String, ttl: Option<Duration>);
+    async fn exists(&mut self, key: String, app_id: String) -> bool;
+    async fn delete (&mut self, key: String, app_id: String);
+    async fn put (&mut self, key: String, app_id: String, ttl: Option<Duration>);
 }
 
-// async fn new (config: DbConfig) -> Arc<dyn IDatabase>;
+pub fn combine_key(key: String, app_id: String) -> String {
+    let mut full_key = app_id.clone();
+    full_key.push_str(":");
+    full_key.push_str(&key[..]);
+    full_key
+}
+
+// async fn new (config: DbConfig) -> Box<dyn IDatabase>;

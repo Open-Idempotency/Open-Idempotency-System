@@ -46,13 +46,13 @@ pub struct OpenIdempotencyService {}
 #[tonic::async_trait]
 impl OpenIdempotency for OpenIdempotencyService {
 
-    type StreamIdmIdStream =
-    Pin<Box<dyn Stream<Item = Result<IdmExistsResponse, Status>> + 'static + Send + Sync >>;
+    type StreamCheckStream =
+    Pin<Box<dyn Stream<Item = Result<IdempotencyStatus, Status>> + 'static + Send + Sync >>;
 
-    async fn stream(
+    async fn stream_check(
         &self,
         request: Request<Streaming<IdempotencyMessage>>,
-    ) -> Result<Response<Self::StreamIdmIdStream>, Status>{
+    ) -> Result<Response<Self::StreamCheckStream>, Status>{
         let (tx, rx) = mpsc::channel(1);
 
         let mut stream: Streaming<IdempotencyMessage> = request.into_inner();
@@ -62,9 +62,39 @@ impl OpenIdempotency for OpenIdempotencyService {
                 let v_request: IdempotencyMessage = vote.unwrap();
 
                 // Do some processing
-                let temp = IdmExistsResponse{
-                    exists: true,
-                    ttl: Some(grpcTimestamp { seconds: 5, nanos: 0 }),
+                let temp = IdempotencyStatus{
+                    success: false,
+                };
+                tx.send(Ok(temp)).await.unwrap();
+            }
+
+            info!("{}", "Client <data here> failed sending data from server");
+        });
+
+        Ok(Response::new(Box::pin(
+            tokio_stream::wrappers::ReceiverStream::new(rx),
+        )))
+
+    }
+
+    type StreamSaveStream =
+    Pin<Box<dyn Stream<Item = Result<IdempotencyStatus, Status>> + 'static + Send + Sync >>;
+
+    async fn stream_save(
+        &self,
+        request: Request<Streaming<IdempotencyDataMessage>>,
+    ) -> Result<Response<Self::StreamSaveStream>, Status>{
+        let (tx, rx) = mpsc::channel(1);
+
+        let mut stream: Streaming<IdempotencyDataMessage> = request.into_inner();
+
+        tokio::spawn(async move {
+            while let Some(vote) = stream.next().await {
+                let v_request: IdempotencyDataMessage = vote.unwrap();
+
+                // Do some processing
+                let temp = IdempotencyStatus{
+                    success: false,
                 };
                 tx.send(Ok(temp)).await.unwrap();
             }
@@ -79,7 +109,7 @@ impl OpenIdempotency for OpenIdempotencyService {
     }
     async fn delete(
         &self,
-        _request: Request<IdempotencyId>,
+        _request: Request<IdempotencyMessage>,
     ) -> Result<Response<()>, Status>{
         Ok(Response::new(()))
     }
@@ -93,14 +123,24 @@ impl OpenIdempotency for OpenIdempotencyService {
 
     async fn check(
         &self,
-        request: Request<IdempotencyId>,
-    ) -> Result<Response<IdmExistsResponse>, Status>{
+        request: Request<IdempotencyMessage>,
+    ) -> Result<Response<IdempotencyResponse>, Status>{
         Ok(Response::new(
-            IdmExistsResponse{
-                exists: true,
-                ttl: Some(grpcTimestamp { seconds: 5, nanos: 0 }),
+            IdempotencyResponse{
+                status: 0,
+                expire: None,
             }
         ))
+    }
+
+    async fn get_data(
+        &self,
+        request: Request<IdpempotencyId>,
+    ) -> Result<Response<IdempotencyDataMessage>, Status>{
+        Ok(Response::new(  IdempotencyDataMessage{
+            id: "".to_string(),
+            data: "".to_string(),
+        }))
     }
 
     async fn config(

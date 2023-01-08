@@ -13,7 +13,7 @@ import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 
 service OpenIdempotency{
-    rpc StreamCheck(stream IdempotencyMessage) returns (stream IdempotencyMessage);
+    rpc StreamCheck(stream IdempotencyMessage) returns (stream IdempotencyStatus);
     rpc StreamSave(stream IdempotencyDataMessage) returns(stream IdempotencyStatus );
     rpc Delete(IdempotencyMessage) returns (google.protobuf.Empty);
     rpc Check(IdempotencyMessage) returns (IdempotencyResponse);
@@ -58,6 +58,7 @@ message IdempotencyDataMessage{
 
 message IdempotencyStatus{
     bool success = 1;
+    string id = 2;
 }
 
 // Pulled from https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto

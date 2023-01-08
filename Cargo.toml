@@ -43,6 +43,8 @@ aws-sdk-dynamodb = "0.22.0"
 redis = {version= "0.22.1", features = ["cluster","tokio-comp","connection-manager","ahash"]}
 async-trait = "0.1.61"
 cassandra-cpp = "1.2.0"
+serde = { version = "1.0.91", features = ["derive"] }
+serde_json = "1.0.91"
 
 [build-dependencies]
 tonic-build = {version= "0.8.0", features = ["prost"]}

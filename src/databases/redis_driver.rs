@@ -57,6 +57,7 @@ impl RedisClient {
 
 #[cfg(test)]
 mod tests {
+    use crate::databases::database::DatabaseOption;
     use super::*;
 
     fn init_client() -> Box<dyn IDatabase> {
@@ -65,6 +66,7 @@ mod tests {
             url: String::from("redis://default:redispw@localhost:49153"),
             keyspace: None,
             ttl: None,
+            database_option: DatabaseOption::Redis
         });
         c
     }

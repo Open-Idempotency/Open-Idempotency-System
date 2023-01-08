@@ -14,10 +14,10 @@ import "google/protobuf/timestamp.proto";
 
 service OpenIdempotency{
     rpc StreamCheck(stream IdempotencyRequest) returns (stream IdempotencyStructure);
-    rpc StreamSave(stream IdempotencyData) returns(stream google.protobuf.Empty );
+    rpc StreamSave(stream IdempotencyDataSaveRequest) returns(stream google.protobuf.Empty );
     rpc Delete(IdempotencyRequest) returns (google.protobuf.Empty);
     rpc Check(IdempotencyRequest) returns (IdempotencyStructure);
-    rpc Save(IdempotencyData) returns(google.protobuf.Empty);
+    rpc Save(IdempotencyDataSaveRequest) returns(google.protobuf.Empty);
     rpc Config(google.protobuf.Empty) returns (ApiConfig);
 }
 
@@ -47,10 +47,15 @@ message IdempotencyRequest {
     int64 customTTL = 2;
 }
 
-message IdempotencyData {
+message IdempotencyDataSaveRequest {
     IdempotencyId id = 1;
     string data = 2;
     int64 customTTL = 3;
+}
+
+message IdempotencyData {
+    IdempotencyId id = 1;
+    string data = 2;
 }
 
 message IdempotencyStructure {

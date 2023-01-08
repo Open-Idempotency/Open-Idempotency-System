@@ -29,7 +29,7 @@ use databases::database::IDatabase;
 use prost_types::Timestamp as grpcTimestamp;
 use prost_types::Duration as grpcDuration;
 use crate::databases::database::{IdempotencyTransaction, MessageStatusDef};
-use crate::open_idempotency::MessageStatus;
+use crate::open_idempotency::{IdempotencyDataSaveRequest, MessageStatus};
 
 
 // lazy_static! {
@@ -110,15 +110,15 @@ impl OpenIdempotency for OpenIdempotencyService {
 
     async fn stream_save(
         &self,
-        request: Request<Streaming<IdempotencyData>>,
+        request: Request<Streaming<IdempotencyDataSaveRequest>>,
     ) -> Result<Response<Self::StreamSaveStream>, Status>{
         let (tx, rx) = mpsc::channel(1);
 
-        let mut stream: Streaming<IdempotencyData> = request.into_inner();
+        let mut stream: Streaming<IdempotencyDataSaveRequest> = request.into_inner();
 
         tokio::spawn(async move {
             while let Some(vote) = stream.next().await {
-                let v_request: IdempotencyData = vote.unwrap();
+                let v_request: IdempotencyDataSaveRequest = vote.unwrap();
                 tx.send(Ok(())).await.unwrap();
                 // Do some processing
                 // let temp = IdempotencyStructure{
@@ -146,9 +146,9 @@ impl OpenIdempotency for OpenIdempotencyService {
 
     async fn save(
         &self,
-        _request: Request<IdempotencyData>,
+        _request: Request<IdempotencyDataSaveRequest>,
     ) -> Result<Response<()>, Status>{
-        let req: IdempotencyData = _request.into_inner();
+        let req: IdempotencyDataSaveRequest = _request.into_inner();
         let id = req.id.clone();
         // let app_id = req.app_id.clone();
         // let mut db = databases::create_database().await;

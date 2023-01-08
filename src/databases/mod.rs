@@ -9,7 +9,7 @@ use crate::databases::cassandra::CassandraClient;
 use crate::databases::database::DbConfig;
 use crate::databases::dynamodb::DynamodbClient;
 
-pub fn create_database() -> Arc<dyn IDatabase> {
+pub fn create_database() -> Box<dyn IDatabase> {
     let config = DbConfig {
         url:  String::from(""),
         table_name: None,

@@ -9,7 +9,15 @@ pub struct DbConfig {
     pub url: String,
     pub table_name: Option<String>,
     pub keyspace: Option<String>,
-    pub ttl: Option<Duration>
+    pub ttl: Option<Duration>,
+    pub database_option: DatabaseOption
+}
+
+#[derive(Clone)]
+pub enum DatabaseOption {
+    Redis,
+    Dynamo,
+    Cassandra
 }
 
 #[async_trait]

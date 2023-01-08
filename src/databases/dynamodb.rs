@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::sync::Arc;
 use std::time::Duration;
 use aws_sdk_dynamodb::Client;
 use aws_sdk_dynamodb::model::AttributeValue;
@@ -11,11 +10,14 @@ pub struct DynamodbClient {
     table_name: String,
     config: DbConfig
 }
+unsafe impl Send for DynamodbClient {
+
+}
 
 #[async_trait]
 impl IDatabase for DynamodbClient {
 
-    async fn exists(&mut self, key: String, app_id: String)  -> Result<IdempotencyTransaction, Box<dyn Error>> {
+    async fn exists(&mut self, key: String, app_id: String)  -> Result<IdempotencyTransaction, Box<dyn Error + Send + Sync>> {
         // let request = &self.client
         //     .get_item()
         //     .table_name(&self.table_name)
@@ -28,7 +30,7 @@ impl IDatabase for DynamodbClient {
         Ok(IdempotencyTransaction::new_default_none())
     }
 
-    async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error>> {
+    async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error + Send + Sync>> {
         // let request = client
         //     .delete_item()
         //     .table_name(tablename)
@@ -41,7 +43,7 @@ impl IDatabase for DynamodbClient {
         Ok(())
     }
 
-    async fn put (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error>> {
+    async fn put (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error + Send + Sync>> {
         // let request = client
         //     .put_item()
         //     .table_name(tablename)
@@ -59,7 +61,7 @@ impl IDatabase for DynamodbClient {
 }
 
 impl DynamodbClient {
-    pub async fn new (config: DbConfig) -> Box<dyn IDatabase> {
+    pub async fn new (config: DbConfig) -> Box<dyn IDatabase + Send> {
         let shared_config = aws_config::load_from_env().await;
         return Box::new(DynamodbClient {
             client: Client::new(&shared_config),

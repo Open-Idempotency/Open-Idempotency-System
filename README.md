@@ -23,7 +23,16 @@ Main repository for the Open-Idempotency System
 
 Run the following command:
 ```bash
-apt install -y protobuf-compiler build-essential libssl-dev gcc g++ gdb ninja-build valgrind cmake  &&
+apt install -y protobuf-compiler build-essential libssl-dev gcc g++  gdb ninja-build valgrind cmake libprotobuf-dev &&
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
+
+
+## Common Errors
+
+### Failed to run custom build 
+
+#### Proto file does not reside in any path
+   Override the MAIN_PROTO_FILE environment variable with the absolute path of the proto files in the repository.
+In a docker container this may be something like /src/protos/idempotency.proto

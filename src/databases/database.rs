@@ -14,7 +14,7 @@ pub struct DbConfig {
 
 #[async_trait]
 pub trait IDatabase {
-    async fn exists(&mut self, key: String, app_id: String) -> Result<MessageStatusDef, Box<dyn Error>>;
+    async fn exists(&mut self, key: String, app_id: String) -> Result<IdempotencyTransaction, Box<dyn Error>>;
     async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error>>;
     async fn put (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error>>;
 }
@@ -23,6 +23,28 @@ pub trait IDatabase {
 pub struct IdempotencyTransaction {
     pub status: MessageStatusDef,
     pub response: String
+}
+
+impl IdempotencyTransaction {
+    pub fn new_from_status(status: MessageStatusDef) -> IdempotencyTransaction {
+        IdempotencyTransaction {
+            status,
+            response: String::from("")
+        }
+    }
+
+    pub fn new_default_none() -> IdempotencyTransaction {
+        IdempotencyTransaction {
+            status: MessageStatusDef::None,
+            response: String::from("")
+        }
+    }
+    pub fn new(status: MessageStatusDef, response: String) -> IdempotencyTransaction {
+        IdempotencyTransaction {
+            status,
+            response
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]

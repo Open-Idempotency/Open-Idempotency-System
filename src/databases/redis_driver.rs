@@ -16,16 +16,16 @@ pub struct RedisClient{
 #[async_trait]
 impl IDatabase for RedisClient {
 
-    async fn exists(&mut self, key: String, app_id: String) -> Result<MessageStatusDef, Box<dyn Error>> {
+    async fn exists(&mut self, key: String, app_id: String) -> Result<IdempotencyTransaction, Box<dyn Error>> {
         let full_key = combine_key(key, app_id);
         let exists: bool = self.con.exists(&full_key, )?;
         if !exists {
-            return Ok(MessageStatusDef::None);
+            return Ok(IdempotencyTransaction::new_default_none());
         }
         // todo: get actual status
         let valString : String = self.con.get(&full_key)?;
         let deserialized: IdempotencyTransaction = serde_json::from_str(&valString).unwrap();
-        return Ok(deserialized.status);
+        return Ok(deserialized);
     }
 
     async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error>> {
@@ -69,15 +69,36 @@ mod tests {
         c
     }
 
+    fn get_app_id() -> String {
+        String::from("my_app")
+    }
+
     #[tokio::test]
     pub async fn test_put() {
+        let key = String::from("test_put");
         let mut c = init_client();
-        c.put(String::from("mykey"), String::from("my_app"), IdempotencyTransaction {
+        c.delete(key.clone(), get_app_id()).await.unwrap();
+        c.put(key.clone(), String::from("my_app"), IdempotencyTransaction {
             response: String::from("SomeString"),
             status: MessageStatusDef::Completed
         },Some(Duration::from_secs(30))).await.unwrap();
-        let result = c.exists(String::from("mykey"), String::from("my_app")).await.unwrap();
-        assert_eq!(result, MessageStatusDef::Completed);
+        let result = c.exists(key.clone(), get_app_id()).await.unwrap();
+        assert_eq!(result.status, MessageStatusDef::Completed);
+        assert_eq!(result.response, "SomeString");
+    }
+
+    #[tokio::test]
+    pub async fn test_delete() {
+        let mut c = init_client();
+        let key = String::from("test_delete");
+        c.put(key.clone(), get_app_id(), IdempotencyTransaction {
+            response: String::from("SomeString"),
+            status: MessageStatusDef::Completed
+        },Some(Duration::from_secs(30))).await.unwrap();
+        c.delete(key.clone(), String::from("my_app")).await.unwrap();
+        let result = c.exists(key.clone(), get_app_id()).await.unwrap();
+        assert_eq!(result.status, MessageStatusDef::None);
+        assert_eq!(result.response, "");
     }
 
 

@@ -12,8 +12,8 @@ pub struct CassandraClient {
 
 #[async_trait]
 impl IDatabase for CassandraClient {
-    async fn exists(&mut self, key: String, app_id: String)  -> Result<MessageStatusDef, Box<dyn Error>>{
-        Ok(MessageStatusDef::None)
+    async fn exists(&mut self, key: String, app_id: String)  -> Result<IdempotencyTransaction, Box<dyn Error>>{
+        Ok(IdempotencyTransaction::new_default_none())
     }
     async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error>> {
         Ok(())

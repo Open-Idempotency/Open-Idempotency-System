@@ -1,8 +1,9 @@
+use std::error::Error;
 use std::sync::Arc;
 // use cassandra_cpp::Cluster;
 use std::time::Duration;
 use async_trait::async_trait;
-use crate::databases::database::{DbConfig, IDatabase};
+use crate::databases::database::{DbConfig, IDatabase, IdempotencyTransaction, MessageStatusDef};
 pub struct CassandraClient {
     // client: Option<cassandra_cpp::Session>,
     table_name: String,
@@ -11,15 +12,14 @@ pub struct CassandraClient {
 
 #[async_trait]
 impl IDatabase for CassandraClient {
-    async fn exists(&mut self, key: String, app_id: String) -> bool{
-
-        return true
+    async fn exists(&mut self, key: String, app_id: String)  -> Result<MessageStatusDef, Box<dyn Error>>{
+        Ok(MessageStatusDef::None)
     }
-    async fn delete (&mut self, key: String, app_id: String){
-
+    async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error>> {
+        Ok(())
     }
-    async fn put (&mut self, key: String, app_id: String, ttl: Option<Duration>){
-
+    async fn put (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error>>{
+        Ok(())
     }
 
 }

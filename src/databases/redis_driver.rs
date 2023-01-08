@@ -3,8 +3,9 @@ use async_trait::async_trait;
 use std::sync::Arc;
 use std::time::Duration;
 use redis::{Client, Commands, Connection, RedisResult};
-use crate::databases::database::{IDatabase, DbConfig, combine_key};
+use crate::databases::database::{IDatabase, DbConfig, combine_key, MessageStatusDef, IdempotencyTransaction};
 use std::convert::TryFrom;
+use std::error::Error;
 
 pub struct RedisClient{
     client: Client,
@@ -12,35 +13,30 @@ pub struct RedisClient{
     config: DbConfig
 }
 
-
-fn fetch_an_integer() -> redis::RedisResult<isize> {
-    // connect to redis
-    let client = redis::Client::open("redis://127.0.0.1/")?;
-    let mut con = client.get_connection()?;
-    // throw away the result, just make sure it does not fail
-    let _ : () = con.set("my_key", 42).unwrap();
-    // read back the key and return it.  Because the return value
-    // from the function is a result for integer this will automatically
-    // convert into one.
-    con.get("my_key")
-}
-
 #[async_trait]
 impl IDatabase for RedisClient {
 
-    async fn exists(&mut self, key: String, app_id: String) -> bool{
-        let val: bool = self.con.exists(combine_key(key, app_id), ).unwrap();
-        return val;
+    async fn exists(&mut self, key: String, app_id: String) -> Result<MessageStatusDef, Box<dyn Error>> {
+        let full_key = combine_key(key, app_id);
+        let exists: bool = self.con.exists(&full_key, )?;
+        if !exists {
+            return Ok(MessageStatusDef::None);
+        }
+        // todo: get actual status
+        let valString : String = self.con.get(&full_key)?;
+        let deserialized: IdempotencyTransaction = serde_json::from_str(&valString).unwrap();
+        return Ok(deserialized.status);
     }
 
-    async fn delete (&mut self, key: String, app_id: String){
-        // let conn = &mut (self.conn).unwrap();
-        // let ret: () = conn.del(key)?;
+    async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error>> {
+        self.con.del(combine_key(key, app_id))?;
+        Ok(())
     }
 
-    async fn put (&mut self, key: String, app_id: String, ttl: Option<Duration>) {
+    async fn put (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error>>{
         let ttl_usize = usize::try_from(ttl.unwrap().as_secs()).unwrap();
-        let _ : () = self.con.set_ex(combine_key(key, app_id), 42, ttl_usize).unwrap();
+        let _ : () = self.con.set_ex(combine_key(key, app_id), serde_json::to_string(&value).unwrap(), ttl_usize)?;
+        Ok(())
     }
 
 }
@@ -63,19 +59,26 @@ impl RedisClient {
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    pub async fn test_connect() {
-        let mut c = RedisClient::new(DbConfig{
+    fn init_client() -> Box<dyn IDatabase> {
+        let c = RedisClient::new(DbConfig{
             table_name: None,
             url: String::from("redis://default:redispw@localhost:49153"),
             keyspace: None,
             ttl: None,
         });
-        c.put(String::from("mykey"), String::from("my_app"), Some(Duration::from_secs(30))).await;
-
-        let result = c.exists(String::from("mykey"), String::from("my_app")).await;
-        println!("{:?}", result);
-        assert_eq!(result, true);
+        c
     }
+
+    #[tokio::test]
+    pub async fn test_put() {
+        let mut c = init_client();
+        c.put(String::from("mykey"), String::from("my_app"), IdempotencyTransaction {
+            response: String::from("SomeString"),
+            status: MessageStatusDef::Completed
+        },Some(Duration::from_secs(30))).await.unwrap();
+        let result = c.exists(String::from("mykey"), String::from("my_app")).await.unwrap();
+        assert_eq!(result, MessageStatusDef::Completed);
+    }
+
 
 }

@@ -13,6 +13,7 @@ use tonic::metadata::{KeyAndValueRef, MetadataValue};
 use tonic_health::server::HealthReporter;
 use tonic_reflection::server::Builder;
 use tokio::sync::mpsc;
+
 use open_idempotency::{
     open_idempotency_server::{OpenIdempotency, OpenIdempotencyServer } ,
     ApiConfig, IdempotencyResponse, IdempotencyId,
@@ -24,7 +25,6 @@ mod databases;
 use databases::database::IDatabase;
 use prost_types::Timestamp as grpcTimestamp;
 use prost_types::Duration as grpcDuration;
-
 
 fn do_stuff() {
     let c = databases::create_database();

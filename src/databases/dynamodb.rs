@@ -1,9 +1,10 @@
+use std::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
 use aws_sdk_dynamodb::Client;
 use aws_sdk_dynamodb::model::AttributeValue;
 use async_trait::async_trait;
-use crate::databases::database::{DbConfig, IDatabase};
+use crate::databases::database::{DbConfig, IDatabase, IdempotencyTransaction, MessageStatusDef};
 
 pub struct DynamodbClient {
     client: Client,
@@ -14,7 +15,7 @@ pub struct DynamodbClient {
 #[async_trait]
 impl IDatabase for DynamodbClient {
 
-    async fn exists(&mut self, key: String, app_id: String) -> bool {
+    async fn exists(&mut self, key: String, app_id: String)  -> Result<MessageStatusDef, Box<dyn Error>> {
         // let request = &self.client
         //     .get_item()
         //     .table_name(&self.table_name)
@@ -24,10 +25,10 @@ impl IDatabase for DynamodbClient {
         //             format!("{}:{}",app_id, key),
         //         )),
         //     ).send().await;
-        return true
+        return Ok(MessageStatusDef::None);
     }
 
-    async fn delete (&mut self, key: String, app_id: String){
+    async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error>> {
         // let request = client
         //     .delete_item()
         //     .table_name(tablename)
@@ -37,9 +38,10 @@ impl IDatabase for DynamodbClient {
         //             format!("{}:{}",self.project_name, key),
         //         )),
         //     ).send().await?;
+        Ok(())
     }
 
-    async fn put (&mut self, key: String, app_id: String, ttl: Option<Duration>){
+    async fn put (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error>> {
         // let request = client
         //     .put_item()
         //     .table_name(tablename)
@@ -52,6 +54,7 @@ impl IDatabase for DynamodbClient {
         //         "ttl",
         //         AttributeValue::N(ttl.seconds),
         //     ).send().await?;
+        Ok(())
     }
 }
 

@@ -15,7 +15,7 @@ pub struct DynamodbClient {
 #[async_trait]
 impl IDatabase for DynamodbClient {
 
-    async fn exists(&mut self, key: String, app_id: String)  -> Result<MessageStatusDef, Box<dyn Error>> {
+    async fn exists(&mut self, key: String, app_id: String)  -> Result<IdempotencyTransaction, Box<dyn Error>> {
         // let request = &self.client
         //     .get_item()
         //     .table_name(&self.table_name)
@@ -25,7 +25,7 @@ impl IDatabase for DynamodbClient {
         //             format!("{}:{}",app_id, key),
         //         )),
         //     ).send().await;
-        return Ok(MessageStatusDef::None);
+        Ok(IdempotencyTransaction::new_default_none())
     }
 
     async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error>> {

@@ -6,20 +6,30 @@ use std::sync::Arc;
 use database::IDatabase;
 use redis_driver::RedisClient;
 use crate::databases::cassandra::CassandraClient;
-use crate::databases::database::DbConfig;
+use crate::databases::database::{DatabaseOption, DbConfig};
 use crate::databases::dynamodb::DynamodbClient;
 
-pub fn create_database() -> Box<dyn IDatabase> {
-    let config = DbConfig {
+fn get_config() -> DbConfig{
+     DbConfig {
         url:  String::from(""),
         table_name: None,
         keyspace: None,
         ttl: None,
-    };
-    let  redis_db = RedisClient::new(config.clone());
-    let  cass = CassandraClient::new(config.clone());
-    let  dynamo = DynamodbClient::new(config.clone());
-    //
-    // let casandra =
-    redis_db
+         database_option: DatabaseOption::Redis
+    }
+}
+
+pub async fn create_database() -> Box<dyn IDatabase> {
+    let config = get_config();
+    return match config.database_option {
+        DatabaseOption::Redis => {
+            RedisClient::new(config.clone())
+        },
+        DatabaseOption::Cassandra => {
+            CassandraClient::new(config.clone())
+        },
+        DatabaseOption::Dynamo => {
+            DynamodbClient::new(config.clone()).await
+        }
+    }
 }

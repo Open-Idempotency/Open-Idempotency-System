@@ -18,7 +18,7 @@ service OpenIdempotency{
     rpc Delete(IdempotencyMessage) returns (google.protobuf.Empty);
     rpc Check(IdempotencyMessage) returns (IdempotencyResponse);
     rpc Save(IdempotencyDataMessage) returns(google.protobuf.Empty);
-    rpc GetData(IdpempotencyId) returns (IdempotencyDataMessage);
+    rpc GetData(IdempotencyId) returns (IdempotencyDataMessage);
     rpc Config(google.protobuf.Empty) returns (ApiConfig);
 }
 
@@ -42,12 +42,12 @@ message IdempotencyResponse{
     google.protobuf.Timestamp expire = 2;
 }
 
-message IdpempotencyId {
+message IdempotencyId {
     string uuid = 1;
 }
 
 message IdempotencyMessage {
-    IdpempotencyId id = 1;
+    IdempotencyId id = 1;
     int64 customTTL = 2;
 }
 

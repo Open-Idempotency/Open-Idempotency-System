@@ -23,7 +23,7 @@ pub async fn create_database() -> Box<dyn IDatabase> {
     let config = get_config();
     return match config.database_option {
         DatabaseOption::Redis => {
-            RedisClient::new(config.clone())
+            RedisClient::new(config.clone()).await
         },
         DatabaseOption::Cassandra => {
             CassandraClient::new(config.clone())

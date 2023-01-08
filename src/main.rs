@@ -15,7 +15,7 @@ use tonic_reflection::server::Builder;
 use tokio::sync::mpsc;
 use open_idempotency::{
     open_idempotency_server::{OpenIdempotency, OpenIdempotencyServer } ,
-    ApiConfig, IdempotencyResponse, IdpempotencyId,
+    ApiConfig, IdempotencyResponse, IdempotencyId,
     IdempotencyDataMessage, IdempotencyStatus,
     IdempotencyMessage , Status as GRPCStatus
 };
@@ -64,6 +64,7 @@ impl OpenIdempotency for OpenIdempotencyService {
                 // Do some processing
                 let temp = IdempotencyStatus{
                     success: false,
+                    id: "".to_string(),
                 };
                 tx.send(Ok(temp)).await.unwrap();
             }
@@ -95,6 +96,7 @@ impl OpenIdempotency for OpenIdempotencyService {
                 // Do some processing
                 let temp = IdempotencyStatus{
                     success: false,
+                    id: "".to_string(),
                 };
                 tx.send(Ok(temp)).await.unwrap();
             }
@@ -116,7 +118,7 @@ impl OpenIdempotency for OpenIdempotencyService {
 
     async fn save(
         &self,
-        _request: Request<IdempotencyId>,
+        _request: Request<IdempotencyDataMessage>,
     ) -> Result<Response<()>, Status>{
         Ok(Response::new(()))
     }
@@ -135,7 +137,7 @@ impl OpenIdempotency for OpenIdempotencyService {
 
     async fn get_data(
         &self,
-        request: Request<IdpempotencyId>,
+        request: Request<IdempotencyId>,
     ) -> Result<Response<IdempotencyDataMessage>, Status>{
         Ok(Response::new(  IdempotencyDataMessage{
             id: "".to_string(),

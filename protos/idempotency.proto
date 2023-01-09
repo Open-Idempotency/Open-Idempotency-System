@@ -13,12 +13,11 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 service OpenIdempotency{
-    rpc StreamCheck(stream IdempotencyMessage) returns (stream IdempotencyStatus);
-    rpc StreamSave(stream IdempotencyDataMessage) returns(stream IdempotencyStatus );
-    rpc Delete(IdempotencyMessage) returns (google.protobuf.Empty);
-    rpc Check(IdempotencyMessage) returns (IdempotencyStatus);
-    rpc Save(IdempotencyDataMessage) returns(google.protobuf.Empty);
-    rpc GetData(IdempotencyId) returns (IdempotencyDataMessage);
+    rpc StreamCheck(stream IdempotencyRequest) returns (stream IdempotencyStructure);
+    rpc StreamSave(stream IdempotencyDataSaveRequest) returns(stream google.protobuf.Empty );
+    rpc Delete(IdempotencyRequest) returns (google.protobuf.Empty);
+    rpc Check(IdempotencyRequest) returns (IdempotencyStructure);
+    rpc Save(IdempotencyDataSaveRequest) returns(google.protobuf.Empty);
     rpc Config(google.protobuf.Empty) returns (ApiConfig);
 }
 
@@ -31,35 +30,37 @@ message ApiConfig{
     ApiType api = 1;
 }
 
-enum messageStatus {
+enum MessageStatus {
     None = 0;
     In_Progress = 1;
     Completed = 2;
 }
 
-message IdempotencyResponse{
-    messageStatus status = 1;
-    google.protobuf.Timestamp expire = 2;
-}
 
 message IdempotencyId {
-    string uuid = 1;
+    string id = 1;
+    string app_id = 2;
 }
 
-message IdempotencyMessage {
+message IdempotencyRequest {
     IdempotencyId id = 1;
-    string app_id = 2;
+    int64 customTTL = 2;
+}
+
+message IdempotencyDataSaveRequest {
+    IdempotencyId id = 1;
+    string data = 2;
     int64 customTTL = 3;
 }
 
-message IdempotencyDataMessage{
-    string id = 1;
+message IdempotencyData {
+    IdempotencyId id = 1;
     string data = 2;
 }
 
-message IdempotencyStatus{
-    messageStatus status = 1;
-    IdempotencyDataMessage message = 2;
+message IdempotencyStructure {
+    MessageStatus status = 1;
+    IdempotencyData message = 2;
 }
 
 // Pulled from https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto

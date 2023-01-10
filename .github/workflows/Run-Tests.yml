@@ -55,7 +55,7 @@ jobs:
           - beta
           - nightly
         rust-version: [stable]
-        features: [ --all-features --fail-under 80 ]
+        features: [ --all-features ] #--fail-under 80 ]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3

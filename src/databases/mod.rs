@@ -2,6 +2,7 @@ mod redis_driver;
 mod dynamodb;
 mod cassandra;
 pub mod database;
+
 use tokio::sync::Mutex;
 use std::sync::{Arc};
 use database::IDatabase;

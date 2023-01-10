@@ -1,5 +1,5 @@
 [package]
-name = "Open-Idempotency"
+name = "open_idempotency"
 version = "0.1.0"
 edition = "2021"
 #build = "build.rs"
@@ -14,8 +14,14 @@ path = "build.rs"
 [features]
 build_deps = []
 
+[dev-dependencies]
+testcontainers = "0.14.0"
+assertor = "0.0.1"
+pretty_env_logger = "0.4.0"
+
 [dependencies]
 async-stream = "0.3.3"
+aws-types = "0.52.0"
 colored = "2.0.0"
 crossbeam = "0.8.2"
 crossbeam-channel = "0.5.6"
@@ -45,6 +51,11 @@ async-trait = "0.1.61"
 cassandra-cpp = "1.2.0"
 serde = { version = "1.0.91", features = ["derive"] }
 serde_json = "1.0.91"
+
+# For Dynamodb Connection
+rusoto = "0.24.2"
+rusoto_core = "0.48.0"
+rusoto_dynamodb = "0.48.0"
 
 [build-dependencies]
 tonic-build = {version= "0.8.0", features = ["prost"]}

@@ -1,0 +1,12 @@
+{
+
+  "customHandler": {
+    "description": {
+      "defaultExecutablePath": "handler.exe",
+      "workingDirectory": "",
+      "arguments": []
+    },
+    "enableForwardingHttpRequest": true
+
+  }
+}

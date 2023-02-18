@@ -3,12 +3,20 @@ name = "Open-Idempotency"
 version = "0.1.0"
 edition = "2021"
 #build = "build.rs"
+[lib]
+name = "client"
+path = "src/client.rs"
 
 [[bin]]
 #name = "idempotency_lambda"
 #path = "src/idempotency_lambda/src/main.rs"
 name = "force-build"
 path = "build.rs"
+
+# cargo build --bin client_e2e
+[[bin]]
+name = "client_e2e"
+path = "src/bin/client_e2e.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]

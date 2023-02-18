@@ -238,19 +238,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn check_auth(req: Request<()>) -> Result<Request<()>, Status> {
-    // FIXME
-    let token: MetadataValue<_> = "Bearer some-auth-token".parse().unwrap();
-
-    match req.metadata().get("authorization") {
-        Some(t) => {
-            if t == token {
-                Ok(req)
-            }else {
-                Err(Status::unauthenticated("No valid auth token"))
-            }
-
-        },
-        _ => Err(Status::unauthenticated("No valid auth token")),
-    }
+    Ok(req)
+    // // FIXME
+    // let token: MetadataValue<_> = "Bearer some-auth-token".parse().unwrap();
+    //
+    // match req.metadata().get("authorization") {
+    //     Some(t) => {
+    //         if t == token {
+    //             Ok(req)
+    //         }else {
+    //             Err(Status::unauthenticated("No valid auth token"))
+    //         }
+    //
+    //     },
+    //     _ => Err(Status::unauthenticated("No valid auth token")),
+    // }
 
 }

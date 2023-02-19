@@ -21,7 +21,7 @@ pub struct DynamodbClient {
 
 
 unsafe impl Send for DynamodbClient {  // TODO comment me
-
+}
 pub struct Item {
     key : String, app_id: String, // composite key
     ttl: String,
@@ -31,94 +31,94 @@ pub struct Item {
 #[async_trait]
 impl IDatabase for DynamodbClient {
 
-        async fn exists(&mut self, key: String, app_id: String) -> Result<IdempotencyTransaction, Box<dyn Error + Send + Sync>> {
-            self.client
-                .get_item()
-                .table_name(&self.table_name)
-                .key(
-                    "key",
-                    AttributeValue::S(String::from(
-                        format!("{}:{}", app_id, key),
-                    )),
-                ).send().await?;
-            Ok(IdempotencyTransaction::new_default_none())
-        }
+    async fn exists(&mut self, key: String, app_id: String) -> Result<IdempotencyTransaction, Box<dyn Error + Send + Sync>> {
+        self.client
+            .get_item()
+            .table_name(&self.table_name)
+            .key(
+                "key",
+                AttributeValue::S(String::from(
+                    format!("{}:{}", app_id, key),
+                )),
+            ).send().await?;
+        Ok(IdempotencyTransaction::new_default_none())
+    }
 
-        async fn delete(&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error + Send + Sync>> {
-            let request = self.client
-                .delete_item()
-                .table_name(&self.table_name)
-                .key(
-                    "key",
-                    AttributeValue::S(String::from(
-                        format!("{}:{}", app_id, key),
-                    )),
-                ).send().await?;
-            Ok(())
-        }
+    async fn delete(&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let request = self.client
+            .delete_item()
+            .table_name(&self.table_name)
+            .key(
+                "key",
+                AttributeValue::S(String::from(
+                    format!("{}:{}", app_id, key),
+                )),
+            ).send().await?;
+        Ok(())
+    }
 
-        // TODO put function isn't working because item needs to be inserted as a composite key
-        // currently rust is only seeing one key inserted
-        async fn put(&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error + Send + Sync>> {
-            let composite_key = (app_id, key);
-            let request = &self.client;
+    // TODO put function isn't working because item needs to be inserted as a composite key
+    // currently rust is only seeing one key inserted
+    async fn put(&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let composite_key = (app_id, key);
+        let request = &self.client;
 
-            let mut map: HashMap<String, AttributeValue> = HashMap::new();
-            //map.insert(key.to_owned() AttributeValue::S()) ;
-            match ttl {
-                None => {
-                    request.put_item()
-                        .table_name(&self.table_name)
-                        .item(
-                            "appid",
-                            AttributeValue::S(composite_key.0)
-                        )
-                        .item(
-                            "key",
-                            AttributeValue::S(composite_key.1))
-                        .send().await.unwrap();
-                }
-                Some(_) => {
-                    let duration = ttl.unwrap();
-                    request.put_item()
-                        .table_name(&self.table_name)
-                        .item(
-                            "appid",
-                            AttributeValue::S(composite_key.0), )
-                        .item(
-                            "key",
-                            AttributeValue::S(composite_key.1)
-                        )
-                        .item(
-                            "ttl",
-                            AttributeValue::N(duration.as_secs().to_string()),
-                        ).send().await.unwrap();
-                }
+        let mut map: HashMap<String, AttributeValue> = HashMap::new();
+        //map.insert(key.to_owned() AttributeValue::S()) ;
+        match ttl {
+            None => {
+                request.put_item()
+                    .table_name(&self.table_name)
+                    .item(
+                        "appid",
+                        AttributeValue::S(composite_key.0)
+                    )
+                    .item(
+                        "key",
+                        AttributeValue::S(composite_key.1))
+                    .send().await.unwrap();
             }
-            Ok(())
+            Some(_) => {
+                let duration = ttl.unwrap();
+                request.put_item()
+                    .table_name(&self.table_name)
+                    .item(
+                        "appid",
+                        AttributeValue::S(composite_key.0), )
+                    .item(
+                        "key",
+                        AttributeValue::S(composite_key.1)
+                    )
+                    .item(
+                        "ttl",
+                        AttributeValue::N(duration.as_secs().to_string()),
+                    ).send().await.unwrap();
+            }
         }
+        Ok(())
     }
-    } // TODO comment me
+}
+//} // TODO comment me
 
-    impl DynamodbClient {
-        pub async fn new(config: DbConfig) -> Box<dyn IDatabase + Send> {
-            //let mut shared_config = aws_config::load_from_env().await;
-            let region_provider = RegionProviderChain::default_provider().or_else("us-east-2");
+impl DynamodbClient {
+    pub async fn new(config: DbConfig) -> Box<dyn IDatabase + Send> {
+        //let mut shared_config = aws_config::load_from_env().await;
+        let region_provider = RegionProviderChain::default_provider().or_else("us-east-2");
 
-            let actual_config = aws_config::from_env()
-                .region(region_provider)
-                .endpoint_resolver(Endpoint::immutable(&config.url).unwrap())
-                .load()
-                .await;
+        let actual_config = aws_config::from_env()
+            .region(region_provider)
+            .endpoint_resolver(Endpoint::immutable(&config.url).unwrap())
+            .load()
+            .await;
 
-            let cli = Client::new(&actual_config);
-            return Box::new(DynamodbClient {
-                client: Client::new(&actual_config),
-                table_name: config.table_name.clone().unwrap(),
-                config: config.clone()
-            });
-        }
+        let cli = Client::new(&actual_config);
+        return Box::new(DynamodbClient {
+            client: Client::new(&actual_config),
+            table_name: config.table_name.clone().unwrap(),
+            config: config.clone()
+        });
     }
+}
 
 #[cfg(test)]
 mod tests{
@@ -160,10 +160,10 @@ mod tests{
         let _ = pretty_env_logger::try_init();
 
         /** this is provided by the testcontainer.rs dependency but the container it creates
-        seems to not have its  8000 port exposed, pivoted to setting up local
-        using localstack docker-compose file instead
-        let node = docker.run(image);
-        node.get_host_port_ipv4(52991);
+               seems to not have its  8000 port exposed, pivoted to setting up local
+               using localstack docker-compose file instead
+               let node = docker.run(image);
+               node.get_host_port_ipv4(52991);
          */
 
         let host_port = 4566;
@@ -201,7 +201,7 @@ mod tests{
         let list_tables_result = req.send().await.unwrap();// _or(not_found);
 
         assert_eq!(list_tables_result.table_names().unwrap().len(), 1);
-        }
+    }
 
 
     async fn build_dynamodb_client(host_port: u16) -> Client {

@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::time::Duration;
 use async_trait::async_trait;
-use scylla::transport::session::{IntoTypedRows, Session};
+use scylla::transport::session::{Session};
 use scylla::SessionBuilder;
 
 
@@ -28,18 +28,18 @@ impl IDatabase for CassandraClient {
         let keyspace  = self.config.keyspace.clone().unwrap();
         let query_string = format!("SELECT \"clientId\", \"appId\", \"value\" FROM \"{}\".\"{}\" WHERE \"clientId\" = '{}' AND \"appId\" = '{}';", keyspace, table, key, app_id);
 
-        if let Some(rows) = self.client.query(query_string.to_string(), &[]).await?.rows {
-            for row in rows.into_typed::<(String, String, String)>() {
-                let (_, _, value) = row?;
+        let (client_id, app_id, value) = self.client.query(query_string.to_string(), &[]).await?.first_row_typed::<(String, String, String)>().unwrap_or(("".to_string(), "".to_string() ,"".to_string()));
 
-                let deserialized= IdempotencyTransaction {
-                    status: Completed,
-                    response: value.to_string(),
-                };
-                return Ok(deserialized);
-            }
+        if client_id.is_empty() && app_id.is_empty() && value.is_empty() {
+            return Ok(IdempotencyTransaction::new_default_none());
         }
-        return Ok(IdempotencyTransaction::new_default_none());
+
+        let deserialized= IdempotencyTransaction {
+            status: Completed,
+            response: value,
+        };
+
+        return Ok(deserialized);
     }
     async fn delete (&mut self, key: String, app_id: String) -> Result<(), Box<dyn Error + Send + Sync>> {
         let table = self.config.table_name.clone().unwrap();
@@ -47,7 +47,6 @@ impl IDatabase for CassandraClient {
         let query_string = format!("DELETE FROM \"{}\".\"{}\" WHERE \"clientId\" = '{}' AND \"appId\" = '{}';", keyspace, table, key, app_id);
 
         self.client.query(query_string, &[]).await?;
-
 
         Ok(())
     }
@@ -59,10 +58,7 @@ impl IDatabase for CassandraClient {
             Some(time) => { time_in_seconds_string = time.as_secs().to_string(); }
             None => {
                 let config_ttl = self.config.ttl;
-                match config_ttl {
-                    Some(c_time) => { time_in_seconds_string = c_time.as_secs().to_string(); }
-                    None => {}
-                }
+                if let Some(c_time) = config_ttl { time_in_seconds_string = c_time.as_secs().to_string(); }
             }
         }
         let query_string = format!("INSERT INTO \"{}\".\"{}\" (\"clientId\", \"appId\", \"value\") VALUES ('{}', '{}' ,'{}') USING TTL {};", keyspace, table, key, app_id, value.response, time_in_seconds_string);
@@ -113,13 +109,13 @@ mod tests {
         let mut c =  init_client().await;
 
         c.put("cl01".to_string(), "ap02".to_string(), IdempotencyTransaction {
-            response: String::from("Value"),
+            response: String::from("Value_Delete"),
             status: MessageStatusDef::Completed
         },Some(Duration::from_secs(30))).await.unwrap();
 
         let result = c.exists("cl01".to_string(), "ap02".to_string()).await.unwrap();
         assert_eq!(result.status, MessageStatusDef::Completed);
-        assert_eq!(result.response, "Value");
+        assert_eq!(result.response, "Value_Delete");
 
         c.delete("cl01".to_string(), "ap02".to_string()).await.unwrap();
 

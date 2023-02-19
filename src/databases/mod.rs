@@ -13,12 +13,12 @@ use crate::databases::dynamodb::DynamodbClient;
 use tokio::runtime::Runtime;
 
 fn get_config() -> DbConfig{
-     DbConfig {
+    DbConfig {
         url:  String::from("redis://default:redispw@localhost:49153"),
         table_name: None,
         keyspace: None,
         ttl: None,
-         database_option: DatabaseOption::Redis
+        database_option: DatabaseOption::Redis
     }
 }
 
@@ -36,7 +36,7 @@ pub async fn create_database() -> Box<dyn IDatabase + Send> {
             RedisClient::new(config.clone()).await
         },
         DatabaseOption::Cassandra => {
-            CassandraClient::new(config.clone())
+            CassandraClient::new(config.clone()).await
         },
         DatabaseOption::Dynamo => {
             DynamodbClient::new(config.clone()).await

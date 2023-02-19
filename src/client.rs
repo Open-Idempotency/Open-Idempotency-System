@@ -1,36 +1,55 @@
+
 use open_idempotency::{
-    open_idempotency_client::{OpenIdempotencyClient },
-    IdempotencyRequest
+    open_idempotency_client::OpenIdempotencyClient,
+    IdempotencyRequest,
+    MessageStatus
 };
-pub fn hello_world() {
-    println!("hello World!")
-}
+//
+// use futures::stream::Stream;
+use std::time::Duration;
+use tokio_stream::StreamExt;
+use tonic::transport::Channel;
 
-pub async fn connect() -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = OpenIdempotencyClient::connect("http://[::1]:8080").await?;
-
-    let request = tonic::Request::new(IdempotencyRequest {
-        id: Some(open_idempotency::IdempotencyId { id: String::from("123"), app_id: String::from("app1") }),
-        custom_ttl: 9999
-    });
-    //
-    let response = client.check(request).await?;
-    //
-    println!("RESPONSE={:?}", response);
-
-    Ok(())
-}
 
 pub mod open_idempotency {
     tonic::include_proto!("open_idempotency");
     pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
         tonic::include_file_descriptor_set!("idempotency_descriptor");
 }
-//
-// use futures::stream::Stream;
-use std::time::Duration;
-use tokio_stream::StreamExt;
-use tonic::transport::Channel;
+
+
+pub fn hello_world() {
+    println!("hello World!")
+}
+
+pub struct IdempotencyClientStruct {
+    pub grpc_client: OpenIdempotencyClient<Channel>
+}
+pub async fn connect(dsn: &str) -> Result<IdempotencyClientStruct, Box<dyn std::error::Error>> {
+    let client = OpenIdempotencyClient::connect(String::from(dsn)).await?;
+    Ok(IdempotencyClientStruct {
+        grpc_client: client
+    })
+}
+
+impl IdempotencyClientStruct {
+    pub async fn check( &mut self, id: String, app_id: String) -> Result<(), Box<dyn std::error::Error>> {
+        let request = tonic::Request::new(IdempotencyRequest {
+            id: Some(open_idempotency::IdempotencyId { id: id, app_id: app_id }),
+            custom_ttl: 9999
+        });
+        let response = self.grpc_client.check(request).await?;
+        let responseData = response.get_ref();
+        let messageStatus = responseData.status();
+    
+        println!("RESPONSE={:?}", response);
+        Ok(())
+    }
+
+}
+
+
+
 //
 // use open_idempotency_client::{echo_client::EchoClient, EchoRequest};
 //

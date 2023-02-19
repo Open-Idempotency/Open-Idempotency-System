@@ -158,15 +158,47 @@ impl OpenIdempotency for OpenIdempotencyService {
     ) -> Result<Response<()>, Status>{
         let req: IdempotencyDataSaveRequest = _request.into_inner();
         let id = req.id.clone();
-        // let app_id = req.app_id.clone();
-        // let mut db = databases::create_database().await;
+
+
+
+        let req = request.into_inner();
+        let (id, app_id)  = parse_idempotency_id(&req.id.expect("Id is required"));
+        let mut db = databases::create_database().await;
+        let check_result = db.exists(
+            id.clone(),
+            app_id.clone()
+        ).await.expect("failed to check result");
+
+        if check_result.status == MessageStatusDef::InProgress
+        {
+            let put_result = db.update(
+                id.clone(),
+                app_id.clone(),
+                IdempotencyTransaction {
+                    status: MessageStatusDef::Completed,
+                    stage: String::from(""),
+                    response: req.data.clone()
+                }
+            ).await.expect("failed to check result");
+            Ok(Response::new(()))
+        } else {
+            let message = match check_result.status {
+                MessageStatusDef::None => { "ERR_NONE" },
+                MessageStatusDef::Completed => { "ERR_COMPLETED" },
+                MessageStatusDef::InProgress => { panic!("Should not hit this") }
+                MessageStatusDef::Failed => { "ERR_FAILED" }
+            };
+            Err( Status::new(tonic::Code::InvalidArgument, message))
+
+        }
+
+
+
+
         Ok(Response::new(()))
     }
 
-    async fn check(
-        &self,
-        request: Request<IdempotencyRequest>,
-    ) -> Result<Response<IdempotencyStructure>, Status>{
+    async fn check(&self, request: Request<IdempotencyRequest>) -> Result<Response<IdempotencyStructure>, Status>{
         let req: IdempotencyRequest = request.into_inner();
         let (id, app_id, ttl) = parse_idempotency_request(&req);
         let mut db = databases::create_database().await;
@@ -184,15 +216,6 @@ impl OpenIdempotency for OpenIdempotencyService {
         let temp = proto_bridge::convert_to_idempotency_status(
             id.clone(), app_id.clone(), check_result);
         Ok(Response::new(temp))
-        // let status1 = Status::new(tonic::Code::Internal, "Failed to to handle request");
-        // tx.send(Err(status1)).await.unwrap();
-
-        // let temp = proto_bridge::convert_to_idempotency_status(
-        //     id.clone(),
-        //     IdempotencyTransaction::new_default_none());
-        // Ok(Response::new(
-        //     temp
-        // ))
     }
 
 

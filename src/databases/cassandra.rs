@@ -36,6 +36,7 @@ impl IDatabase for CassandraClient {
 
         let deserialized= IdempotencyTransaction {
             status: Completed,
+            stage: String::from(""),
             response: value,
         };
 
@@ -50,17 +51,23 @@ impl IDatabase for CassandraClient {
 
         Ok(())
     }
-    async fn put (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error + Send + Sync>>{
+    async fn insert (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error + Send + Sync>>{
         let table = self.config.table_name.clone().unwrap();
         let keyspace  = self.config.keyspace.clone().unwrap();
         let mut time_in_seconds_string = (60 * 60 * 48).to_string();
-        match ttl {
-            Some(time) => { time_in_seconds_string = time.as_secs().to_string(); }
-            None => {
-                let config_ttl = self.config.ttl;
-                if let Some(c_time) = config_ttl { time_in_seconds_string = c_time.as_secs().to_string(); }
-            }
-        }
+        let ttl_usize = self.config.resolve_ttl(&ttl);
+        time_in_seconds_string = ttl_usize.to_string();
+        let query_string = format!("INSERT INTO \"{}\".\"{}\" (\"clientId\", \"appId\", \"value\") VALUES ('{}', '{}' ,'{}') USING TTL {};", keyspace, table, key, app_id, value.response, time_in_seconds_string);
+
+        self.client.query(query_string,&[]).await?;
+
+        Ok(())
+    }
+    async fn update (&mut self, key: String, app_id: String, value: IdempotencyTransaction) -> Result<(), Box<dyn Error + Send + Sync>>{
+        let table = self.config.table_name.clone().unwrap();
+        let keyspace  = self.config.keyspace.clone().unwrap();
+        let mut time_in_seconds_string = (60 * 60 * 48).to_string();
+        time_in_seconds_string = self.config.ttl.expect("should get the ttl from cassandra").as_secs().to_string();
         let query_string = format!("INSERT INTO \"{}\".\"{}\" (\"clientId\", \"appId\", \"value\") VALUES ('{}', '{}' ,'{}') USING TTL {};", keyspace, table, key, app_id, value.response, time_in_seconds_string);
 
         self.client.query(query_string,&[]).await?;

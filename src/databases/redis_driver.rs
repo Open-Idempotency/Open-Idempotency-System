@@ -12,6 +12,7 @@ pub struct RedisClient{
     config: DbConfig
 }
 
+
 unsafe impl Send for RedisClient {
 
 }
@@ -36,12 +37,22 @@ impl IDatabase for RedisClient {
         Ok(())
     }
 
-    async fn put (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error + Send + Sync>>{
-        let ttl_usize = usize::try_from(ttl.unwrap().as_secs()).unwrap();
-        let _ : () = self.con.set_ex(
+    async fn insert (&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let ttl_usize = self.config.resolve_ttl(&ttl);
+        let _: () = self.con.set_ex(
             combine_key(key, app_id),
             serde_json::to_string(&value).unwrap(),
             ttl_usize
+        ).await?;
+        Ok(())
+    }
+    async fn update (&mut self, key: String, app_id: String, value: IdempotencyTransaction) -> Result<(), Box<dyn Error + Send + Sync>>{
+        let combined_key = combine_key(key, app_id);
+        let ttl = self.con.ttl(&combined_key).await?;
+        let _ : () = self.con.set_ex(
+            &combined_key,
+            serde_json::to_string(&value).unwrap(),
+            ttl
         ).await?;
         Ok(())
     }
@@ -86,9 +97,10 @@ mod tests {
         let key = String::from("test_put");
         let mut c = init_client().await;
         c.delete(key.clone(), get_app_id()).await.unwrap();
-        c.put(key.clone(), String::from("my_app"), IdempotencyTransaction {
+        c.insert(key.clone(), String::from("my_app"), IdempotencyTransaction {
             response: String::from("SomeString"),
-            status: MessageStatusDef::Completed
+            status: MessageStatusDef::Completed,
+            stage: String:: from("")
         },Some(Duration::from_secs(30))).await.unwrap();
         let result = c.exists(key.clone(), get_app_id()).await.unwrap();
         assert_eq!(result.status, MessageStatusDef::Completed);
@@ -99,9 +111,10 @@ mod tests {
     pub async fn test_delete() {
         let mut c = init_client().await;
         let key = String::from("test_delete");
-        c.put(key.clone(), get_app_id(), IdempotencyTransaction {
+        c.insert(key.clone(), get_app_id(), IdempotencyTransaction {
             response: String::from("SomeString"),
-            status: MessageStatusDef::Completed
+            status: MessageStatusDef::Completed,
+            stage: String:: from("")
         },Some(Duration::from_secs(30))).await.unwrap();
         c.delete(key.clone(), String::from("my_app")).await.unwrap();
         let result = c.exists(key.clone(), get_app_id()).await.unwrap();

@@ -1,5 +1,9 @@
 # Open-Idempotency-System
+
 Main repository for the Open-Idempotency System 
+
+This system is a cache for idempotency apis. You can use this system to determine if a call has already been made
+but if a call has not finished, it is up to you to determine your own rollback, strategy.
 
 ## Setup
 

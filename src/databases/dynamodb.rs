@@ -59,7 +59,7 @@ impl IDatabase for DynamodbClient {
 
     // TODO put function isn't working because item needs to be inserted as a composite key
     // currently rust is only seeing one key inserted
-    async fn put(&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn insert(&mut self, key: String, app_id: String, value: IdempotencyTransaction, ttl: Option<Duration>) -> Result<(), Box<dyn Error + Send + Sync>> {
         let composite_key = (app_id, key);
         let request = &self.client;
 
@@ -96,6 +96,10 @@ impl IDatabase for DynamodbClient {
             }
         }
         Ok(())
+    }
+
+    async fn update(&mut self, key: String, app_id: String, value: IdempotencyTransaction) -> Result<(), Box<dyn Error + Send + Sync>> {
+        todo!()
     }
 }
 //} // TODO comment me
@@ -146,12 +150,12 @@ mod tests{
         let mut c = init_client().await;
         let app_id = "thisApp".to_string();
         let key_id = "item1".to_string();
-        let idem_trans = IdempotencyTransaction{ status: MessageStatusDef::None, response: "".to_string(), };
+        let idem_trans = IdempotencyTransaction{ status: MessageStatusDef::None, response: "".to_string(),stage: "".to_string() };
         let dur = Duration::new(60, 0);
         let ttl = dur;
 
 
-        let r = c.put(key_id, app_id, idem_trans, Some(ttl));
+        let r = c.insert(key_id, app_id, idem_trans, Some(ttl));
         r.await.unwrap_err();
     }
 

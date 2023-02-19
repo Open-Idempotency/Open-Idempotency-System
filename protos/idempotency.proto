@@ -12,12 +12,13 @@ import "google/protobuf/empty.proto";
 //import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 
-service OpenIdempotency{
-    rpc StreamCheck(stream IdempotencyRequest) returns (stream IdempotencyStructure);
-    rpc StreamSave(stream IdempotencyDataSaveRequest) returns(stream google.protobuf.Empty );
+service OpenIdempotency {
+    // rpc StreamCheck(stream IdempotencyRequest) returns (stream IdempotencyStructure);
+    // rpc StreamSaveStage(stream IdempotencyDataSaveRequest) returns(stream google.protobuf.Empty );
     rpc Delete(IdempotencyRequest) returns (google.protobuf.Empty);
     rpc Check(IdempotencyRequest) returns (IdempotencyStructure);
-    rpc Save(IdempotencyDataSaveRequest) returns(google.protobuf.Empty);
+    rpc SaveStage(IdempotencyDataSaveRequest) returns(google.protobuf.Empty);
+    rpc Complete(IdempotencyCompleteRequest) returns(google.protobuf.Empty);
     rpc Config(google.protobuf.Empty) returns (ApiConfig);
 }
 
@@ -34,6 +35,7 @@ enum MessageStatus {
     None = 0;
     In_Progress = 1;
     Completed = 2;
+    Failed= 3;
 }
 
 
@@ -50,8 +52,15 @@ message IdempotencyRequest {
 message IdempotencyDataSaveRequest {
     IdempotencyId id = 1;
     string data = 2;
-    int64 customTTL = 3;
+    string stage = 3;
+    int64 customTTL = 4;
 }
+
+message IdempotencyCompleteRequest {
+    IdempotencyId id = 1;
+    string data = 2;
+}
+
 
 message IdempotencyData {
     IdempotencyId id = 1;

@@ -1,8 +1,8 @@
 use tokio::sync::mpsc;
-use server::start_server;
 use std::{thread, time::Duration};
 use futures_util::FutureExt;
 use tokio::sync::mpsc::Sender;
+use open_idempotency::server::start_server;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -3,19 +3,13 @@ name = "open_idempotency"
 version = "0.1.0"
 edition = "2021"
 #build = "build.rs"
-[lib]
-name = "client"
-path = "src/client.rs"
+
 
 [[bin]]
 #name = "idempotency_lambda"
 #path = "src/idempotency_lambda/src/main.rs"
 name = "force-build"
 path = "build.rs"
-
-[lib]
-name = "server"
-path = "src/server.rs"
 
 # cargo build --bin client_e2e
 [[bin]]

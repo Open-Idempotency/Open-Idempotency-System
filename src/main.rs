@@ -156,12 +156,9 @@ impl OpenIdempotency for OpenIdempotencyService {
         &self,
         _request: Request<IdempotencyDataSaveRequest>,
     ) -> Result<Response<()>, Status>{
-        let req: IdempotencyDataSaveRequest = _request.into_inner();
-        let id = req.id.clone();
-
-
-
-        let req = request.into_inner();
+        // let req: IdempotencyDataSaveRequest = _request.into_inner();
+        // let id = req.id.clone();
+        let req = _request.into_inner();
         let (id, app_id)  = parse_idempotency_id(&req.id.expect("Id is required"));
         let mut db = databases::create_database().await;
         let check_result = db.exists(
@@ -171,12 +168,12 @@ impl OpenIdempotency for OpenIdempotencyService {
 
         if check_result.status == MessageStatusDef::InProgress
         {
-            let put_result = db.update(
+            db.update(
                 id.clone(),
                 app_id.clone(),
                 IdempotencyTransaction {
                     status: MessageStatusDef::Completed,
-                    stage: String::from(""),
+                    stage: req.stage,
                     response: req.data.clone()
                 }
             ).await.expect("failed to check result");
@@ -189,13 +186,7 @@ impl OpenIdempotency for OpenIdempotencyService {
                 MessageStatusDef::Failed => { "ERR_FAILED" }
             };
             Err( Status::new(tonic::Code::InvalidArgument, message))
-
         }
-
-
-
-
-        Ok(Response::new(()))
     }
 
     async fn check(&self, request: Request<IdempotencyRequest>) -> Result<Response<IdempotencyStructure>, Status>{
@@ -239,7 +230,7 @@ impl OpenIdempotency for OpenIdempotencyService {
 
         if check_result.status == MessageStatusDef::InProgress
         {
-            let put_result = db.update(
+           db.update(
                 id.clone(),
                 app_id.clone(),
                 IdempotencyTransaction {
